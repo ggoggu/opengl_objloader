@@ -83,11 +83,6 @@ bool IOBJ::loadTexture(const char* filename, std::string mtlname, std::string te
 		temp_sizemap.insert({ texname, width_height });
 		texmapsize.insert({ mtlname, temp_sizemap });
 	}
-
-
-
-
-
 }
 
 bool IOBJ::loadMeterialFile(const char* filename)
@@ -232,7 +227,6 @@ bool IOBJ::loadMeterialFile(const char* filename)
 
 	return true;
 }
-
 
 bool IOBJ::loadFile2(const char* filename)
 {
@@ -1023,6 +1017,7 @@ void IOBJ::generate()
 	glEndList();
 }
 */
+
 void IOBJ::render2() {
 	for (auto iter = facevector.begin(); iter != facevector.end(); iter++) {
 		face faceandmtl = *iter;
@@ -1132,8 +1127,6 @@ void IOBJ::render2() {
 					float newny = w_matrix[1][0] * nx + w_matrix[1][1] * ny + w_matrix[1][2] * nz;
 					float newnz = w_matrix[2][0] * nx + w_matrix[2][1] * ny + w_matrix[2][2] * nz;
 
-
-
 					glNormal3f(newnx, newny, newnz);
 					glTexCoord2d(uvs[ux].x, uvs[uy].y);
 					glVertex3f(newx, newy, newz);
@@ -1145,7 +1138,7 @@ void IOBJ::render2() {
 		}
 		else {
 
-	//		glColor3f(Kd[0], Kd[1], Kd[2]);
+			glColor3f(Kd[0], Kd[1], Kd[2]);
 			
 			for (register unsigned int i = 0; i < t_vertexIndices.size(); i++) {
 				std::vector<unsigned short> vertexindex = t_vertexIndices[i];
@@ -1190,7 +1183,7 @@ void IOBJ::render() {
 
 void IOBJ::loadcheck()
 {
-	//std::cout << mtlname.at("") << '\n';
+	std::cout<<(facevector[0].Index)[0].size()<<'\n';
 
 }
 
@@ -1276,3 +1269,297 @@ void IOBJ::rotaionz(double r)
 	w_matrix[2][1] = sin(r) * temp_matrix[2][0] + cos(r) * temp_matrix[2][1];
 }
 
+void IOBJ::subdivision_triangle() {
+	for (auto iter = facevector.begin(); iter != facevector.end(); iter++) {
+		std::vector<std::vector<std::vector<unsigned short>>> faces = (*iter).Index;
+
+		std::vector<std::vector<unsigned short>> t_vertexIndices, t_normalIndices;
+		t_vertexIndices = faces[0];
+		t_normalIndices = faces[2];
+
+		unsigned short oldvertexnumber = vertices.size();
+
+		// vertex 늘리기
+		for (unsigned short i = 0; i < t_vertexIndices.size(); i++) {
+			std::vector<unsigned short> vertexindex = t_vertexIndices[i];
+			std::vector<unsigned short> normalindex = t_normalIndices[i];
+
+			vec3 newv1, newv2, newv3;
+
+			newv1.x = (vertices[vertexindex[0] - 1].x + vertices[vertexindex[1] - 1].x) / 2.0;
+			newv1.y = (vertices[vertexindex[0] - 1].y + vertices[vertexindex[1] - 1].y) / 2.0;
+			newv1.z = (vertices[vertexindex[0] - 1].z + vertices[vertexindex[1] - 1].z) / 2.0;
+
+			newv2.x = (vertices[vertexindex[1] - 1].x + vertices[vertexindex[2] - 1].x) / 2.0;
+			newv2.y = (vertices[vertexindex[1] - 1].y + vertices[vertexindex[2] - 1].y) / 2.0;
+			newv2.z = (vertices[vertexindex[1] - 1].z + vertices[vertexindex[2] - 1].z) / 2.0;
+
+			newv3.x = (vertices[vertexindex[0] - 1].x + vertices[vertexindex[2] - 1].x) / 2.0;
+			newv3.y = (vertices[vertexindex[0] - 1].y + vertices[vertexindex[2] - 1].y) / 2.0;
+			newv3.z = (vertices[vertexindex[0] - 1].z + vertices[vertexindex[2] - 1].z) / 2.0;
+
+			unsigned short nvi1, nvi2, nvi3;
+
+			bool check1 = true, check2 = true, check3 = true;
+
+
+			for (unsigned short j = oldvertexnumber; j < vertices.size(); j++) {
+				vec3 v = vertices[j];
+				if ((v.x == newv1.x) && (v.y == newv1.y) && (v.z == newv1.z)) {
+					check1 = false;
+					newv1 = v;
+					nvi1 = j + 1;
+				}
+				if ((v.x == newv2.x) && (v.y == newv2.y) && (v.z == newv2.z)) {
+					check2 = false;
+					newv2 = v;
+					nvi2 = j + 1;
+				}
+				if ((v.x == newv3.x) && (v.y == newv3.y) && (v.z == newv3.z)) {
+					check3 = false;
+					newv3 = v;
+					nvi3 = j + 1;
+				}
+			}
+
+			if (check1 == true) {
+
+				vertices.push_back(newv1);
+				nvi1 = vertices.size();
+
+			}
+			if (check2 == true) {
+
+				vertices.push_back(newv2);
+				nvi2 = vertices.size();
+
+			}
+			if (check3 == true) {
+
+				vertices.push_back(newv3);
+				nvi3 = vertices.size();
+
+			}
+
+			std::vector<unsigned short> vertexindex1;
+			std::vector<unsigned short> vertexindex2;
+			std::vector<unsigned short> vertexindex3;
+			std::vector<unsigned short> vertexindex4;
+
+			vertexindex1.push_back(vertexindex[0]);
+			vertexindex1.push_back(nvi1);
+			vertexindex1.push_back(nvi3);
+
+			vertexindex2.push_back(vertexindex[1]);
+			vertexindex2.push_back(nvi2);
+			vertexindex2.push_back(nvi1);
+
+			vertexindex3.push_back(vertexindex[2]);
+			vertexindex3.push_back(nvi2);
+			vertexindex3.push_back(nvi3);
+
+			vertexindex4.push_back(nvi1);
+			vertexindex4.push_back(nvi2);
+			vertexindex4.push_back(nvi3);
+
+
+			((*iter).Index)[0].push_back(vertexindex1);
+			((*iter).Index)[0].push_back(vertexindex2);
+			((*iter).Index)[0].push_back(vertexindex3);
+			((*iter).Index)[0].push_back(vertexindex4);
+
+			((*iter).Index)[2].push_back(normalindex);
+			((*iter).Index)[2].push_back(normalindex);
+			((*iter).Index)[2].push_back(normalindex);
+			((*iter).Index)[2].push_back(normalindex);
+		}
+
+		std::vector<std::vector<unsigned short>> change_verticesindex = (*iter).Index[0];
+		std::vector<vec3> tvertices = vertices;
+
+		// 기존 vertex 기준 위치 조정
+		for (unsigned short i = 0; i < oldvertexnumber; i++) {
+
+			std::vector<unsigned short> s_vindexvector;
+
+
+			for (unsigned short j = 0; j < t_vertexIndices.size(); j++) {
+
+				std::vector<unsigned short> vertexindex = t_vertexIndices[j];
+
+				bool vertex_is = false;
+
+				for (int k = 0; k < 3; k++) {
+					if ((vertexindex[k] - 1) == i) {
+						vertex_is = true;
+						break;
+					}
+					else
+						continue;
+				}
+
+				if (vertex_is == true) {
+
+					for (int k = 0; k < 3; k++) {
+						unsigned short t_index = (vertexindex[k]);
+						bool vector_is_check = false;
+
+						if ((t_index - 1) == i)
+							continue;
+						else {
+
+							for (int kk = 0; kk < s_vindexvector.size(); kk++) {
+								if ((s_vindexvector[kk]) == t_index) {
+									vector_is_check = true;
+									break;
+								}
+
+							}
+
+							if (vector_is_check == true)
+								continue;
+							else {
+								s_vindexvector.push_back(t_index);
+							}
+
+
+
+						}
+					}
+				}
+			}
+
+			vec3 onew_vertex;
+
+			onew_vertex.x = tvertices[i].x * 0.8;
+			for (int j = 0; j < s_vindexvector.size(); j++) {
+				onew_vertex.x += tvertices[s_vindexvector[j] - 1].x * 0.2 / s_vindexvector.size();
+			}
+
+			onew_vertex.y = tvertices[i].y * 0.8;
+			for (int j = 0; j < s_vindexvector.size(); j++) {
+				onew_vertex.y += tvertices[s_vindexvector[j] - 1].y * 0.2 / s_vindexvector.size();
+			}
+
+			onew_vertex.z = tvertices[i].z * 0.8;
+			for (int j = 0; j < s_vindexvector.size(); j++) {
+				onew_vertex.z += tvertices[s_vindexvector[j] - 1].z * 0.2 / s_vindexvector.size();
+			}
+
+			vertices[i] = onew_vertex;
+
+		}
+
+
+		// 기존 face 제거
+		for (unsigned short i = 0; i < t_vertexIndices.size(); i++)
+		{
+			((*iter).Index)[0].erase(((*iter).Index)[0].begin());
+			((*iter).Index)[2].erase(((*iter).Index)[2].begin());
+		}
+
+	}
+}
+
+void IOBJ::subdivision_triangle_notgen_vertex()
+{
+	for (auto iter = facevector.begin(); iter != facevector.end(); iter++)
+	{
+		std::vector<std::vector<std::vector<unsigned short>>> faces = (*iter).Index;
+
+		std::vector<std::vector<unsigned short>> t_vertexIndices, t_normalIndices;
+		t_vertexIndices = faces[0];
+		t_normalIndices = faces[2];
+
+		unsigned short oldvertexnumber = vertices.size();
+
+		std::vector<vec3> tvertices = vertices;
+
+		for (unsigned short i = 0; i < oldvertexnumber; i++) {
+
+			std::vector<unsigned short> s_vindexvector;
+
+
+			for (unsigned short j = 0; j < t_vertexIndices.size(); j++) {
+
+				std::vector<unsigned short> vertexindex = t_vertexIndices[j];
+
+				bool vertex_is = false;
+
+				for (int k = 0; k < 3; k++) {
+					if ((vertexindex[k] - 1) == i) {
+						vertex_is = true;
+						break;
+					}
+					else
+						continue;
+				}
+
+				if (vertex_is == true) {
+
+					for (int k = 0; k < 3; k++) {
+						unsigned short t_index = (vertexindex[k]);
+						bool vector_is_check = false;
+
+						if ((t_index - 1) == i)
+							continue;
+						else {
+
+							for (int kk = 0; kk < s_vindexvector.size(); kk++) {
+								if ((s_vindexvector[kk]) == t_index) {
+									vector_is_check = true;
+									break;
+								}
+
+							}
+
+							if (vector_is_check == true)
+								continue;
+							else {
+								s_vindexvector.push_back(t_index);
+							}
+
+
+
+						}
+					}
+				}
+			}
+
+			vec3 onew_vertex;
+
+			onew_vertex.x = tvertices[i].x * 0.7;
+			for (int j = 0; j < s_vindexvector.size(); j++) {
+				onew_vertex.x += tvertices[s_vindexvector[j] - 1].x * 0.3 / s_vindexvector.size();
+			}
+
+			onew_vertex.y = tvertices[i].y * 0.7;
+			for (int j = 0; j < s_vindexvector.size(); j++) {
+				onew_vertex.y += tvertices[s_vindexvector[j] - 1].y * 0.3 / s_vindexvector.size();
+			}
+
+			onew_vertex.z = tvertices[i].z * 0.7;
+			for (int j = 0; j < s_vindexvector.size(); j++) {
+				onew_vertex.z += tvertices[s_vindexvector[j] - 1].z * 0.3 / s_vindexvector.size();
+			}
+
+			vertices[i] = onew_vertex;
+
+		}
+	}
+}
+
+void IOBJ::makesiple(float theta)
+{
+	for (auto iter = facevector.begin(); iter != facevector.end(); iter++) {
+		std::vector<std::vector<std::vector<unsigned short>>> faces = (*iter).Index;
+
+		std::vector<std::vector<unsigned short>> t_vertexIndices, t_normalIndices;
+		t_vertexIndices = faces[0];
+		t_normalIndices = faces[2];
+
+		for (int i = 0; i < vertices.size(); i++) {
+
+		}
+	}
+}

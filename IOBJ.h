@@ -24,8 +24,6 @@ private:
 		std::vector<std::vector<std::vector<unsigned short>>> Index;
 	};
 
-
-
 public:
 	IOBJ(const char* filename);
 	~IOBJ();
@@ -75,6 +73,11 @@ public:
 	void generate();
 	void render2();
 	void render();
+
+	void subdivision_triangle();
+	void subdivision_triangle_notgen_vertex();
+
+	void makesiple(float theta);
 
 	void trnaslate(float x, float y, float z);
 	void rotaionx(double r);
